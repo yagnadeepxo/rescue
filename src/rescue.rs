@@ -19,33 +19,14 @@ impl Rescue {
         Self {width, capacity, rate, n}
     }
 
-    pub fn hash(&self, input_sequence: Vec<FieldElement<U64PrimeField<PRIME>>>) -> Vec<FieldElement<U64PrimeField<PRIME>>>{
-        let m = self.width;
-        assert!(input_sequence.len() % self.rate == 0);
-        let mut state = vec![FieldElement::<U64PrimeField<PRIME>>::zero(); m];
-        let mut absorb_index = 0;
-        while absorb_index < input_sequence.len() {
-            for i in 0..self.rate {
-                state[i] += input_sequence[absorb_index];
-            }
-            absorb_index += 1;
+    pub fn hash(&self, mut input_sequence: Vec<FieldElement<U64PrimeField<PRIME>>>) -> Vec<FieldElement<U64PrimeField<PRIME>>>{
+        assert_eq!(input_sequence.len(), self.width);
 
-            self.permutation(&mut state);
-        }
-        let mut output_sequence = vec![];
-        let mut squeeze_index = 0;
-        while squeeze_index < self.rate {
-            for i in 0..self.rate {
-                output_sequence.push(state[i]);
-            }
-            squeeze_index += 1;
+        // Apply the permutation to the state.
+        self.permutation(&mut input_sequence);
 
-            if squeeze_index < self.rate {
-                self.permutation(&mut state);
-            }
-        }
-
-        output_sequence[..self.width].to_vec()
+        // The output is simply the permuted state.
+        input_sequence
     }
 
 
@@ -57,7 +38,6 @@ impl Rescue {
 
         let m = self.width;
         let n = self.n;
-        let r = self.rate;
 
         // round constants 
     let round_constants: Vec<FieldElement<U64PrimeField<PRIME>>> = vec![
@@ -256,216 +236,82 @@ impl Rescue {
 ];
         
 
-    let mds = vec![
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-        ],
-        vec![
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(9),
-            FieldElement::<U64PrimeField<PRIME>>::from(7),
-            FieldElement::<U64PrimeField<PRIME>>::from(4),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-            FieldElement::<U64PrimeField<PRIME>>::from(16),
-            FieldElement::<U64PrimeField<PRIME>>::from(2),
-            FieldElement::<U64PrimeField<PRIME>>::from(256),
-            FieldElement::<U64PrimeField<PRIME>>::from(128),
-            FieldElement::<U64PrimeField<PRIME>>::from(3),
-            FieldElement::<U64PrimeField<PRIME>>::from(32),
-            FieldElement::<U64PrimeField<PRIME>>::from(1),
-        ],
-];
+pub fn linear_combination_u64(u: &[u64], v: &[FieldElement<U64PrimeField<PRIME>>]) -> FieldElement<U64PrimeField<PRIME>> {
+    assert_eq!(u.len(), v.len(), "The lengths of u and v must be the same.");
 
-// The matrix mds is now initialized with the provided elements
+    let mut result = FieldElement::<U64PrimeField<PRIME>>::zero();
+    
+    for (ui, vi) in u.iter().zip(v.iter()) {
+        // Perform the field multiplication and addition
+        result = result + FieldElement::<U64PrimeField<PRIME>>::from(*ui) * vi;
+    }
+    
+    result
+}
+
+const MATRIX_CIRC_MDS_12_SML: [u64; 12] = [9, 7, 4, 1, 16, 2, 256, 128, 3, 32, 1, 1];
+
+// This function applies the circulant MDS matrix to the input state.
+pub fn apply_circulant_12_sml(state: &mut [FieldElement<U64PrimeField<PRIME>>]) {
+    // Check that the state has the correct length to apply the MDS matrix.
+    assert_eq!(state.len(), 12, "State must be of length 12");
+
+    let mut new_state = [FieldElement::<U64PrimeField<PRIME>>::zero(); 12];
+
+    for i in 0..12 {
+        // Generate the i-th row of the circulant matrix by rotating the first row
+        let rotated_matrix_row = rotate_right(MATRIX_CIRC_MDS_12_SML, i);
+
+        // Compute the linear combination of the state with the i-th row of the MDS matrix
+        new_state[i] = linear_combination_u64(
+            &rotated_matrix_row,
+            state,
+        );
+    }
+
+    for (s, &new_s) in state.iter_mut().zip(new_state.iter()) {
+        *s = new_s;
+    }
+}
+
+// Helper function to rotate an array to the right.
+fn rotate_right<const N: usize>(input: [u64; N], offset: usize) -> [u64; N] {
+    let mut output = [0u64; N];
+    let offset = offset % N; // Ensure the offset is within the bounds of the array size
+    for (i, item) in input.iter().enumerate() {
+        output[(i + offset) % N] = *item;
+    }
+    output
+}
 
 
-        let zero = FieldElement::<U64PrimeField<PRIME>>::zero();
+pub fn add_round_constants(state: &mut [FieldElement<U64PrimeField<PRIME>>], round_constants: &[FieldElement<U64PrimeField<PRIME>>]) {
+    for (s, rc) in state.iter_mut().zip(round_constants.iter()) {
+        *s = *s + *rc; 
+    }
+}
 
-        for _ in 0..n {
+
+        for round in 0..n {
           for i in 0..m {
             state[i] = state[i].pow(alpha);  
           }
           
-        let mut temp = vec![zero; m];
-            for i in 0..m {
-                for j in 0..m {          
-                    temp[i] = temp[i] + mds[i][j] * state[j]; 
-            }
-        }
+        apply_circulant_12_sml(state);
           
-        for i in 0..m {
-            state[i] = temp[i] + round_constants[2*r*m + i];  
-        }
+        add_round_constants(state, &round_constants[2*round*m..]);
            
         for i in 0..m {
             state[i] = state[i].pow(alpha_inv);
         }
 
-        let mut temp = vec![zero; m];
-            for i in 0..m {
-                for j in 0..m {          
-                temp[i] = temp[i] + mds[i][j] * state[j]; 
-            }
-        }
-
-        for i in 0..m {
-            state[i] = temp[i] + round_constants[2*r*m + i];  
-        }
+        apply_circulant_12_sml(state);
+          
+        add_round_constants(state, &round_constants[2*round*m..]);
 
         }
 
-      }
+    }
 
 }
 

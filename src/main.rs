@@ -27,3 +27,4 @@ fn main() {
     
     println!("{:?}", hash);
 }
+
