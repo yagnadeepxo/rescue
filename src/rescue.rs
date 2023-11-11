@@ -24,7 +24,7 @@ impl Rescue {
         // Apply the permutation to the state.
         self.permutation(&mut input_sequence);
 
-        // The output is simply the permuted state.
+        
         input_sequence
     }
 
@@ -297,13 +297,13 @@ mod tests {
             FieldElement::<U64PrimeField<PRIME>>::from(2070146754),
         ];
 
-        // Perform the hash
+        
         let result = rescue.hash(state);
 
-        // Check if the result matches the expected output
+        
         assert_eq!(result, expected_output);
     }
 
-    // Add more tests as needed
+    
 }
 
