@@ -1,8 +1,7 @@
-
-
 use lambdaworks_math::field::element::FieldElement;
 use lambdaworks_math::field::fields::u64_prime_field::U64PrimeField;
 
+mod util;
 
 const PRIME : u64 = 2147483647;
 
@@ -19,7 +18,7 @@ impl Rescue {
         Self {width, capacity, rate, n}
     }
 
-    pub fn hash(&self, mut input_sequence: Vec<FieldElement<U64PrimeField<PRIME>>>) -> Vec<FieldElement<U64PrimeField<PRIME>>>{
+    pub fn hash(&self, mut input_sequence: [FieldElement<U64PrimeField<PRIME>>; 12]) -> [FieldElement<U64PrimeField<2147483647>>; 12]{
         assert_eq!(input_sequence.len(), self.width);
 
         // Apply the permutation to the state.
@@ -30,7 +29,7 @@ impl Rescue {
     }
 
 
-    pub fn permutation(&self, state: &mut Vec<FieldElement<U64PrimeField<PRIME>>>) {
+    pub fn permutation(&self, state: &mut [FieldElement<U64PrimeField<PRIME>> ; 12]) {
     
         let alpha: u64 = 5;
         
@@ -40,7 +39,7 @@ impl Rescue {
         let n = self.n;
 
         // round constants 
-    let round_constants: Vec<FieldElement<U64PrimeField<PRIME>>> = vec![
+    let round_constants: [FieldElement<U64PrimeField<PRIME>>; 192] = [
         FieldElement::<U64PrimeField<PRIME>>::from(1419697373),
         FieldElement::<U64PrimeField<PRIME>>::from(1814085569),
         FieldElement::<U64PrimeField<PRIME>>::from(1979784298),
@@ -234,90 +233,77 @@ impl Rescue {
         FieldElement::<U64PrimeField<PRIME>>::from(164309891),
         FieldElement::<U64PrimeField<PRIME>>::from(1566500094)
 ];
-        
 
-pub fn linear_combination_u64(u: &[u64], v: &[FieldElement<U64PrimeField<PRIME>>]) -> FieldElement<U64PrimeField<PRIME>> {
-    assert_eq!(u.len(), v.len(), "The lengths of u and v must be the same.");
-
-    let mut result = FieldElement::<U64PrimeField<PRIME>>::zero();
-    
-    for (ui, vi) in u.iter().zip(v.iter()) {
-        // Perform the field multiplication and addition
-        result = result + FieldElement::<U64PrimeField<PRIME>>::from(*ui) * vi;
-    }
-    
-    result
-}
-
-const MATRIX_CIRC_MDS_12_SML: [u64; 12] = [9, 7, 4, 1, 16, 2, 256, 128, 3, 32, 1, 1];
-
-// This function applies the circulant MDS matrix to the input state.
-pub fn apply_circulant_12_sml(state: &mut [FieldElement<U64PrimeField<PRIME>>]) {
-    // Check that the state has the correct length to apply the MDS matrix.
-    assert_eq!(state.len(), 12, "State must be of length 12");
-
-    let mut new_state = [FieldElement::<U64PrimeField<PRIME>>::zero(); 12];
-
-    for i in 0..12 {
-        // Generate the i-th row of the circulant matrix by rotating the first row
-        let rotated_matrix_row = rotate_right(MATRIX_CIRC_MDS_12_SML, i);
-
-        // Compute the linear combination of the state with the i-th row of the MDS matrix
-        new_state[i] = linear_combination_u64(
-            &rotated_matrix_row,
-            state,
-        );
-    }
-
-    for (s, &new_s) in state.iter_mut().zip(new_state.iter()) {
-        *s = new_s;
-    }
-}
-
-// Helper function to rotate an array to the right.
-fn rotate_right<const N: usize>(input: [u64; N], offset: usize) -> [u64; N] {
-    let mut output = [0u64; N];
-    let offset = offset % N; // Ensure the offset is within the bounds of the array size
-    for (i, item) in input.iter().enumerate() {
-        output[(i + offset) % N] = *item;
-    }
-    output
-}
-
-
-pub fn add_round_constants(state: &mut [FieldElement<U64PrimeField<PRIME>>], round_constants: &[FieldElement<U64PrimeField<PRIME>>]) {
-    for (s, rc) in state.iter_mut().zip(round_constants.iter()) {
-        *s = *s + *rc; 
-    }
-}
-
-
-        for round in 0..n {
-          for i in 0..m {
-            state[i] = state[i].pow(alpha);  
-          }
+    for round in 0..n {
+        util::sbox(state, alpha);
           
-        apply_circulant_12_sml(state);
+        util::apply_circulant_12_sml(state);
           
-        add_round_constants(state, &round_constants[2*round*m..]);
+        util::add_round_constants(state, &round_constants[2*round*m..]);
            
-        for i in 0..m {
-            state[i] = state[i].pow(alpha_inv);
-        }
+        util::sbox_inv(state, alpha_inv);
 
-        apply_circulant_12_sml(state);
+        util::apply_circulant_12_sml(state);
           
-        add_round_constants(state, &round_constants[2*round*m..]);
+        util::add_round_constants(state, &round_constants[2*round*m + m..]);
 
-        }
+    }
 
     }
 
 }
 
 
+// tests taken from plonky3
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_rescue_hash() {
+        // Create a Rescue instance
+        let rescue = Rescue::new(12, 6, 8);
 
+        // Input state
+        let state: [FieldElement<U64PrimeField<PRIME>>; 12] = [
+            FieldElement::<U64PrimeField<PRIME>>::from(144096679),
+            FieldElement::<U64PrimeField<PRIME>>::from(1638468327),
+            FieldElement::<U64PrimeField<PRIME>>::from(1550998769),
+            FieldElement::<U64PrimeField<PRIME>>::from(1713522258),
+            FieldElement::<U64PrimeField<PRIME>>::from(730676443),
+            FieldElement::<U64PrimeField<PRIME>>::from(955614588),
+            FieldElement::<U64PrimeField<PRIME>>::from(1970746889),
+            FieldElement::<U64PrimeField<PRIME>>::from(1473251100),
+            FieldElement::<U64PrimeField<PRIME>>::from(1575313887),
+            FieldElement::<U64PrimeField<PRIME>>::from(1867935938),
+            FieldElement::<U64PrimeField<PRIME>>::from(364960233),
+            FieldElement::<U64PrimeField<PRIME>>::from(91318724),
+        ];
 
+        // Expected output
+        let expected_output: [FieldElement<U64PrimeField<PRIME>>; 12] = [
+            FieldElement::<U64PrimeField<PRIME>>::from(504747180),
+            FieldElement::<U64PrimeField<PRIME>>::from(1708979401),
+            FieldElement::<U64PrimeField<PRIME>>::from(1023327691),
+            FieldElement::<U64PrimeField<PRIME>>::from(414948293),
+            FieldElement::<U64PrimeField<PRIME>>::from(1811202621),
+            FieldElement::<U64PrimeField<PRIME>>::from(427591394),
+            FieldElement::<U64PrimeField<PRIME>>::from(666516466),
+            FieldElement::<U64PrimeField<PRIME>>::from(1900855073),
+            FieldElement::<U64PrimeField<PRIME>>::from(1511950466),
+            FieldElement::<U64PrimeField<PRIME>>::from(346735768),
+            FieldElement::<U64PrimeField<PRIME>>::from(708718627),
+            FieldElement::<U64PrimeField<PRIME>>::from(2070146754),
+        ];
 
+        // Perform the hash
+        let result = rescue.hash(state);
+
+        // Check if the result matches the expected output
+        assert_eq!(result, expected_output);
+    }
+
+    // Add more tests as needed
+}
 
